@@ -3420,7 +3420,7 @@ void ApiWrap::forwardMessages(
 	}
 
 	auto forwardFrom = draft.items.front()->history()->peer;
-	if (forwardFrom->allowsAyuForwarding()) {
+	if (!forwardFrom->allowsAyuForwarding()) {
 		// should copy content and send as a message
 		return;
 	}
