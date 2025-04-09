@@ -3420,6 +3420,10 @@ void ApiWrap::forwardMessages(
 	}
 
 	auto forwardFrom = draft.items.front()->history()->peer;
+	if (forwardFrom->allowsAyuForwarding()) {
+		// should copy content and send as a message
+		return;
+	}
 	auto ids = QVector<MTPint>();
 	auto randomIds = QVector<MTPlong>();
 	auto localIds = std::shared_ptr<base::flat_map<uint64, FullMsgId>>();
