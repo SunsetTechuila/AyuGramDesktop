@@ -235,6 +235,7 @@ public:
 	[[nodiscard]] bool isGigagroup() const;
 	[[nodiscard]] bool isRepliesChat() const;
 	[[nodiscard]] bool isVerifyCodes() const;
+	[[nodiscard]] bool isFreezeAppealChat() const;
 	[[nodiscard]] bool sharedMediaInfo() const;
 	[[nodiscard]] bool savedSublistsInfo() const;
 	[[nodiscard]] bool hasStoriesHidden() const;
@@ -396,6 +397,7 @@ public:
 	[[nodiscard]] bool canManageGifts() const;
 	[[nodiscard]] bool canTransferGifts() const;
 	[[nodiscard]] bool canExportChatHistory() const;
+	[[nodiscard]] bool autoTranslation() const;
 
 	// Returns true if about text was changed.
 	bool setAbout(const QString &newAbout);

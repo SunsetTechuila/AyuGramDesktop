@@ -73,7 +73,8 @@ enum class ChannelDataFlag : uint64 {
 	SignatureProfiles = (1ULL << 35),
 	StargiftsAvailable = (1ULL << 36),
 	PaidMessagesAvailable = (1ULL << 37),
-	AyuNoForwards = (1ULL << 38),
+	AutoTranslation = (1ULL << 38),
+	AyuNoForwards = (1ULL << 39),
 };
 inline constexpr bool is_flag_type(ChannelDataFlag) { return true; };
 using ChannelDataFlags = base::flags<ChannelDataFlag>;
@@ -322,6 +323,9 @@ public:
 	[[nodiscard]] bool antiSpamMode() const {
 		return flags() & Flag::AntiSpam;
 	}
+	[[nodiscard]] bool autoTranslation() const {
+		return flags() & Flag::AutoTranslation;
+	}
 
 	[[nodiscard]] auto adminRights() const {
 		return _adminRights.current();
@@ -384,6 +388,7 @@ public:
 	[[nodiscard]] bool canViewAdmins() const;
 	[[nodiscard]] bool canViewBanned() const;
 	[[nodiscard]] bool canEditSignatures() const;
+	[[nodiscard]] bool canEditAutoTranslate() const;
 	[[nodiscard]] bool canEditStickers() const;
 	[[nodiscard]] bool canEditEmoji() const;
 	[[nodiscard]] bool canDelete() const;
@@ -406,9 +411,9 @@ public:
 	void setLocation(const MTPChannelLocation &data);
 	[[nodiscard]] const ChannelLocation *getLocation() const;
 
-	void setLinkedChat(ChannelData *linked);
-	[[nodiscard]] ChannelData *linkedChat() const;
-	[[nodiscard]] bool linkedChatKnown() const;
+	void setDiscussionLink(ChannelData *link);
+	[[nodiscard]] ChannelData *discussionLink() const;
+	[[nodiscard]] bool discussionLinkKnown() const;
 
 	void ptsInit(int32 pts) {
 		_ptsWaiter.init(pts);
@@ -567,7 +572,7 @@ private:
 	std::vector<Data::UnavailableReason> _unavailableReasons;
 	std::unique_ptr<InvitePeek> _invitePeek;
 	QString _inviteLink;
-	std::optional<ChannelData*> _linkedChat;
+	std::optional<ChannelData*> _discussionLink;
 
 	Data::AllowedReactions _allowedReactions;
 
