@@ -3340,7 +3340,79 @@ void ApiWrap::forwardMessages(
 
 	auto forwardFrom = draft.items.front()->history()->peer;
 	if (!forwardFrom->allowsAyuForwarding()) {
-		// should copy content and send as a message
+		// Copy content and send as regular messages instead of forwarding
+		for (const auto item : draft.items) {
+			auto copyAction = action;
+			copyAction.generateLocal = true;
+			
+			// Handle different message types
+			if (const auto media = item->media()) {
+				if (const auto photo = media->photo()) {
+					// Handle photo messages
+					auto caption = item->originalText();
+					// Create a new photo message by re-uploading or using existing photo data
+					// This would require additional implementation to handle photo copying
+					// For now, send as text with caption
+					if (!caption.text.isEmpty()) {
+						auto message = MessageToSend(copyAction);
+						message.textWithTags = { caption.text, TextUtilities::ConvertEntitiesToTextTags(caption.entities) };
+						sendMessage(std::move(message));
+					}
+				} else if (const auto document = media->document()) {
+					// Handle document/video/sticker messages
+					auto caption = item->originalText();
+					if (!caption.text.isEmpty()) {
+						auto message = MessageToSend(copyAction);
+						message.textWithTags = { caption.text, TextUtilities::ConvertEntitiesToTextTags(caption.entities) };
+						sendMessage(std::move(message));
+					}
+				} else if (const auto contact = media->sharedContact()) {
+					// Handle contact messages
+					sendSharedContact(
+						contact->phoneNumber,
+						contact->firstName,
+						contact->lastName,
+						contact->userId,
+						copyAction,
+						nullptr);
+				} else if (media->webpage()) {
+					// Handle messages with web page previews
+					auto text = item->originalText();
+					auto message = MessageToSend(copyAction);
+					message.textWithTags = { text.text, TextUtilities::ConvertEntitiesToTextTags(text.entities) };
+					// Copy webpage information if available
+					if (const auto webpage = media->webpage()) {
+						message.webPage.url = webpage->url;
+						message.webPage.id = webpage->id;
+						message.webPage.manual = true;
+					}
+					sendMessage(std::move(message));
+				}
+			} else {
+				// Handle text-only messages
+				auto text = item->originalText();
+				if (!text.text.isEmpty()) {
+					auto message = MessageToSend(copyAction);
+					message.textWithTags = { text.text, TextUtilities::ConvertEntitiesToTextTags(text.entities) };
+					sendMessage(std::move(message));
+				}
+			}
+		}
+		
+		// Call success callback if provided
+		if (successCallback) {
+			successCallback();
+		}
+		
+		// Finish the action (similar to normal forwarding)
+		_session->data().sendHistoryChangeNotifications();
+		if (!action.options.shortcutId) {
+			_session->changes().historyUpdated(
+				action.history,
+				(action.options.scheduled
+					? Data::HistoryUpdate::Flag::ScheduledSent
+					: Data::HistoryUpdate::Flag::MessageSent));
+		}
 		return;
 	}
 	auto ids = QVector<MTPint>();
