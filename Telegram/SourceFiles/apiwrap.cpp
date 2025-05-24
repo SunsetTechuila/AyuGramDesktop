@@ -3340,7 +3340,33 @@ void ApiWrap::forwardMessages(
 
 	auto forwardFrom = draft.items.front()->history()->peer;
 	if (!forwardFrom->allowsAyuForwarding()) {
-		// should copy content and send as a message
+		for (const auto &item : draft.items) {
+			const auto message = item->asMsg();
+			if (!message) continue;
+
+			const auto media = message->media();
+			const auto messageText = message->originalText();
+
+			// Create MessageToSend with the original text
+			auto messageToSend = Api::MessageToSend(action);
+			messageToSend.textWithTags =
+				TextWithTags{messageText.text, TextUtilities::ConvertEntitiesToTextTags(messageText.entities)};
+
+			if (media && media->photo()) {
+				// Handle photo messages
+				const auto photo = media->photo();
+				Api::SendExistingPhoto(std::move(messageToSend), photo);
+			} else if (media && media->document()) {
+				// Handle document/file messages
+				const auto document = media->document();
+				Api::SendExistingDocument(std::move(messageToSend), document);
+			} else if (!messageText.text.isEmpty()) {
+				// Handle text-only messages
+				messageToSend.action.clearDraft = false;
+				sendMessage(std::move(messageToSend));
+			}
+		}
+		shared->callback();
 		return;
 	}
 	auto ids = QVector<MTPint>();
